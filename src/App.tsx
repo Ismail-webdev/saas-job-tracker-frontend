@@ -1,12 +1,9 @@
 import React from "react";
 import AppLayout from "./app/layout/AppLayout";
+import { AppRouter } from "./app/routes/router";
 
 const App = () => {
-  return (
-    <AppLayout>
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-    </AppLayout>
-  );
+  return <AppRouter />;
 };
 
 export default App;
