@@ -1,7 +1,8 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 const Sidebar = () => {
+  const linkClass = "block rounded px-3 py-2 hover:bg-gray-800";
   const navLinks = [
     {
       name: "Dashboard",
@@ -22,13 +23,15 @@ const Sidebar = () => {
 
       <nav className="space-y-2 px-4 flex flex-col">
         {navLinks.map((link) => (
-          <Link
+          <NavLink
             to={link.href}
-            className="cursor-pointer rounded px-3 py-2 hover:bg-gray-800"
+            className={({ isActive }) =>
+              `${linkClass} ${isActive ? "bg-gray-800" : ""}`
+            }
             key={link.name}
           >
             {link.name}
-          </Link>
+          </NavLink>
         ))}
       </nav>
     </aside>
