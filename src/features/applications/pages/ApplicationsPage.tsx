@@ -1,7 +1,17 @@
+import { useState } from "react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -12,13 +22,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@radix-ui/react-dropdown-menu";
-import React from "react";
 
-const applications = [
+import ApplicationForm from "../components/ApplicationForm";
+
+/* ---------------- Types ---------------- */
+
+type Status = "Applied" | "Interview" | "Offer" | "Rejected";
+
+type Application = {
+  id: number;
+  company: string;
+  role: string;
+  status: Status;
+  appliedOn: string;
+};
+
+/* ---------------- Mock Data ---------------- */
+
+const applications: Application[] = [
   {
     id: 1,
     company: "Google",
@@ -35,7 +56,9 @@ const applications = [
   },
 ];
 
-const statusColor = (status: string) => {
+/* ---------------- Helpers ---------------- */
+
+const statusVariant = (status: Status) => {
   switch (status) {
     case "Interview":
       return "default";
@@ -43,15 +66,31 @@ const statusColor = (status: string) => {
       return "secondary";
     case "Rejected":
       return "destructive";
+    case "Offer":
+      return "outline";
     default:
       return "outline";
   }
 };
+
+/* ---------------- Page ---------------- */
+
 const ApplicationsPage = () => {
+  const [openAdd, setOpenAdd] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [selectedApplication, setSelectedApplication] =
+    useState<Application | null>(null);
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Applications</h1>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Applications</h1>
 
+        <Button onClick={() => setOpenAdd(true)}>Add Application</Button>
+      </div>
+
+      {/* Table */}
       <Table>
         <TableHeader>
           <TableRow>
@@ -79,7 +118,9 @@ const ApplicationsPage = () => {
                 <TableCell>{app.company}</TableCell>
                 <TableCell>{app.role}</TableCell>
                 <TableCell>
-                  <Badge variant={statusColor(app.status)}>{app.status}</Badge>
+                  <Badge variant={statusVariant(app.status)}>
+                    {app.status}
+                  </Badge>
                 </TableCell>
                 <TableCell>{app.appliedOn}</TableCell>
                 <TableCell className="text-right">
@@ -89,14 +130,18 @@ const ApplicationsPage = () => {
                         ⋮
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="shadow border-gray-400 p-1 px-2 bg-white"
-                    >
-                      <DropdownMenuItem className="border-b border-gray-300 py-1 hover:cursor-pointer">
+
+                    <DropdownMenuContent align="end" className="w-32">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedApplication(app);
+                          setOpenEdit(true);
+                        }}
+                      >
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600 py-1 hover:cursor-pointer">
+
+                      <DropdownMenuItem className="text-red-600">
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -107,6 +152,28 @@ const ApplicationsPage = () => {
           )}
         </TableBody>
       </Table>
+
+      {/* Add Dialog */}
+      <Dialog open={openAdd} onOpenChange={setOpenAdd}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Application</DialogTitle>
+          </DialogHeader>
+          <ApplicationForm />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Application</DialogTitle>
+          </DialogHeader>
+
+          {/* Later you will pass selectedApplication as props */}
+          <ApplicationForm />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

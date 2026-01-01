@@ -1,34 +1,36 @@
-import React from "react";
 import { NavLink } from "react-router-dom";
 
 const Sidebar = () => {
-  const linkClass = "block rounded px-3 py-2 hover:bg-gray-800";
+  const linkBaseClass =
+    "block rounded px-3 py-2 transition-colors hover:bg-gray-800";
+
   const navLinks = [
     {
       name: "Dashboard",
-      href: "dashboard",
+      to: "/dashboard",
     },
     {
       name: "Applications",
-      href: "applications",
+      to: "/applications",
     },
     {
-      name: "Settings ",
-      href: "settings",
+      name: "Settings",
+      to: "/settings",
     },
   ];
+
   return (
     <aside className="h-screen w-64 bg-gray-900 text-white">
       <div className="p-4 text-xl font-bold">Job Tracker</div>
 
-      <nav className="space-y-2 px-4 flex flex-col">
+      <nav className="flex flex-col space-y-2 px-4">
         {navLinks.map((link) => (
           <NavLink
-            to={link.href}
-            className={({ isActive }) =>
-              `${linkClass} ${isActive ? "bg-gray-800" : ""}`
-            }
             key={link.name}
+            to={link.to}
+            className={({ isActive }) =>
+              `${linkBaseClass} ${isActive ? "bg-gray-800" : ""}`
+            }
           >
             {link.name}
           </NavLink>
