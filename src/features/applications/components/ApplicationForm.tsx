@@ -1,3 +1,6 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,23 +11,53 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import React from "react";
 
-const ApplicationForm = () => {
+import {
+  applicationSchema,
+  ApplicationFormValues,
+} from "../application.schema";
+import { data } from "react-router-dom";
+
+type Props = {
+  defaultValues?: Partial<ApplicationFormValues>;
+  onSubmit?: (data: ApplicationFormValues) => void;
+};
+const ApplicationForm = ({ defaultValues, onSubmit }: Props) => {
+  const form = useForm<ApplicationFormValues>({
+    resolver: zodResolver(applicationSchema),
+    defaultValues,
+  });
   return (
-    <form className="space-y-4">
+    <form
+      className="space-y-4"
+      onSubmit={form.handleSubmit((data) => {
+        onSubmit?.(data);
+      })}
+    >
       <div className="space-y-1">
-        <Label htmlFor="company">Company</Label>
-        <Input id="company" placeholder="Company name" />
+        <Label>Company</Label>
+        <Input {...form.register("company")} />
+        {form.formState.errors.company && (
+          <p className="text-sm text-red-600">
+            {form.formState.errors.company.message}
+          </p>
+        )}
       </div>
       <div className="space-y-1">
-        <Label htmlFor="role">Role</Label>
-        <Input id="role" placeholder="Frontend Developer" />
+        <Label>Role</Label>
+        <Input {...form.register("role")} />
+        {form.formState.errors.role && (
+          <p className="text-sm text-red-600">
+            {form.formState.errors.role.message}
+          </p>
+        )}
       </div>
 
       <div className="space-y-1">
         <label>Status</label>
-        <Select>
+        <Select
+          onValueChange={(value) => form.setValue("status", value as any)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
@@ -35,6 +68,11 @@ const ApplicationForm = () => {
             <SelectItem value="Rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
+        {form.formState.errors.status && (
+          <p className="text-sm text-red-600">
+            {form.formState.errors.status.message}
+          </p>
+        )}
       </div>
 
       <div className="flex justify-end gap-2 pt-2">

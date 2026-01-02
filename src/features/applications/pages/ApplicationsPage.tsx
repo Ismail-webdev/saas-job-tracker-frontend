@@ -25,8 +25,6 @@ import {
 
 import ApplicationForm from "../components/ApplicationForm";
 
-/* ---------------- Types ---------------- */
-
 type Status = "Applied" | "Interview" | "Offer" | "Rejected";
 
 type Application = {
@@ -36,8 +34,6 @@ type Application = {
   status: Status;
   appliedOn: string;
 };
-
-/* ---------------- Mock Data ---------------- */
 
 const applications: Application[] = [
   {
@@ -56,8 +52,6 @@ const applications: Application[] = [
   },
 ];
 
-/* ---------------- Helpers ---------------- */
-
 const statusVariant = (status: Status) => {
   switch (status) {
     case "Interview":
@@ -72,8 +66,6 @@ const statusVariant = (status: Status) => {
       return "outline";
   }
 };
-
-/* ---------------- Page ---------------- */
 
 const ApplicationsPage = () => {
   const [openAdd, setOpenAdd] = useState(false);
