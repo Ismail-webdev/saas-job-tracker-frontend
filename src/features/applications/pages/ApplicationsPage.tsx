@@ -38,6 +38,8 @@ import {
 /* ---------------- Types ---------------- */
 
 type Status = "Applied" | "Interview" | "Offer" | "Rejected";
+type SortKey = "appliedOn" | "company" | "status";
+type SortOrder = "asc" | "desc";
 
 type Application = {
   id: string;
@@ -67,6 +69,8 @@ const statusVariant = (status: Status) => {
 /* ---------------- Page ---------------- */
 
 const ApplicationsPage = () => {
+  const [sortKey, setSortKey] = useState<SortKey>("appliedOn");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [applications, setApplications] = useState<Application[]>([
     {
       id: uuidv4(),
@@ -93,7 +97,7 @@ const ApplicationsPage = () => {
 
   /* ---------- Handlers ---------- */
 
-  const filteredApplication = applications.filter((app) => {
+  const filteredApplications = applications.filter((app) => {
     const matchStatus = statusFilter === "All" || app.status === statusFilter;
 
     const matchesSearch =
@@ -102,7 +106,20 @@ const ApplicationsPage = () => {
 
     return matchStatus && matchesSearch;
   });
+  const sortedApplications = [...filteredApplications].sort((a, b) => {
+    const aVal = a[sortKey];
+    const bVal = b[sortKey];
 
+    if (sortKey === "appliedOn") {
+      const aDate = new Date(aVal).getTime();
+      const bDate = new Date(bVal).getTime();
+      return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
+    }
+
+    return sortOrder === "asc"
+      ? String(aVal).localeCompare(String(bVal))
+      : String(bVal).localeCompare(String(aVal));
+  });
   const handleAdd = (data: ApplicationFormValues) => {
     setApplications((prev) => [
       ...prev,
@@ -164,6 +181,28 @@ const ApplicationsPage = () => {
             <SelectItem value="Rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+          <SelectTrigger className="sm:max-w-sm">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="appliedOn">Applied Date</SelectItem>
+            <SelectItem value="company">Company</SelectItem>
+            <SelectItem value="status">Status</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={sortOrder}
+          onValueChange={(v) => setSortOrder(v as SortOrder)}
+        >
+          <SelectTrigger className="sm:max-w-sm">
+            <SelectValue placeholder="Order" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="desc">Descending</SelectItem>
+            <SelectItem value="asc">Ascending</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
@@ -179,7 +218,7 @@ const ApplicationsPage = () => {
         </TableHeader>
 
         <TableBody>
-          {filteredApplication.length === 0 ? (
+          {sortedApplications.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={5}
@@ -189,7 +228,7 @@ const ApplicationsPage = () => {
               </TableCell>
             </TableRow>
           ) : (
-            filteredApplication.map((app) => (
+            sortedApplications.map((app) => (
               <TableRow key={app.id}>
                 <TableCell>{app.company}</TableCell>
                 <TableCell>{app.role}</TableCell>
