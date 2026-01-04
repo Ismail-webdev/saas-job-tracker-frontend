@@ -4,12 +4,6 @@ import { v4 as uuidv4 } from "uuid";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -23,9 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-import ApplicationForm from "../components/ApplicationForm";
-import { ApplicationFormValues } from "../application.schema";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -35,42 +26,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-/* ---------------- Types ---------------- */
+import { ApplicationFormValues } from "../application.schema";
+import ApplicationDialog from "../components/ApplicationDialog";
 
-type Status = "Applied" | "Interview" | "Offer" | "Rejected";
-type SortKey = "appliedOn" | "company" | "status";
-type SortOrder = "asc" | "desc";
-
-type Application = {
-  id: string;
-  company: string;
-  role: string;
-  status: Status;
-  appliedOn: string;
-};
-
-/* ---------------- Helpers ---------------- */
-
-const statusVariant = (status: Status) => {
-  switch (status) {
-    case "Interview":
-      return "default";
-    case "Applied":
-      return "secondary";
-    case "Rejected":
-      return "destructive";
-    case "Offer":
-      return "outline";
-    default:
-      return "outline";
-  }
-};
+import { Application, Status, SortKey, SortOrder } from "../types";
+import { statusVariant } from "../application.utils";
+import { useApplicationsView } from "../useApplicationsView";
 
 /* ---------------- Page ---------------- */
 
 const ApplicationsPage = () => {
-  const [sortKey, setSortKey] = useState<SortKey>("appliedOn");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [applications, setApplications] = useState<Application[]>([
     {
       id: uuidv4(),
@@ -88,90 +53,100 @@ const ApplicationsPage = () => {
     },
   ]);
 
-  const [openAdd, setOpenAdd] = useState(false);
-  const [openEdit, setOpenEdit] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("appliedOn");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [statusFilter, setStatusFilter] = useState<Status | "All">("All");
   const [search, setSearch] = useState("");
+
+  const [openAdd, setOpenAdd] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   const [selectedApplication, setSelectedApplication] =
     useState<Application | null>(null);
 
-  /* ---------- Handlers ---------- */
-
-  const filteredApplications = applications.filter((app) => {
-    const matchStatus = statusFilter === "All" || app.status === statusFilter;
-
-    const matchesSearch =
-      app.company.toLowerCase().includes(search.toLowerCase()) ||
-      app.role.toLowerCase().includes(search.toLowerCase());
-
-    return matchStatus && matchesSearch;
+  const viewApplications = useApplicationsView({
+    applications,
+    search,
+    statusFilter,
+    sortKey,
+    sortOrder,
   });
-  const sortedApplications = [...filteredApplications].sort((a, b) => {
-    const aVal = a[sortKey];
-    const bVal = b[sortKey];
 
-    if (sortKey === "appliedOn") {
-      const aDate = new Date(aVal).getTime();
-      const bDate = new Date(bVal).getTime();
-      return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
-    }
+  /* ---------------- Handlers ---------------- */
 
-    return sortOrder === "asc"
-      ? String(aVal).localeCompare(String(bVal))
-      : String(bVal).localeCompare(String(aVal));
-  });
   const handleAdd = (data: ApplicationFormValues) => {
-    setApplications((prev) => [
-      ...prev,
-      {
-        id: uuidv4(),
-        appliedOn: new Date().toISOString().split("T")[0],
-        ...data,
-      },
-    ]);
+    setIsLoading(true);
 
-    setOpenAdd(false);
+    setTimeout(() => {
+      setApplications((prev) => [
+        ...prev,
+        {
+          id: uuidv4(),
+          appliedOn: new Date().toISOString().split("T")[0],
+          ...data,
+        },
+      ]);
+      setIsLoading(false);
+      setOpenAdd(false);
+    }, 800);
   };
 
   const handleEdit = (data: ApplicationFormValues) => {
     if (!selectedApplication) return;
 
-    setApplications((prev) =>
-      prev.map((app) =>
-        app.id === selectedApplication.id ? { ...app, ...data } : app
-      )
-    );
+    setIsLoading(true);
 
-    setOpenEdit(false);
-    setSelectedApplication(null);
+    setTimeout(() => {
+      setApplications((prev) =>
+        prev.map((app) =>
+          app.id === selectedApplication.id ? { ...app, ...data } : app
+        )
+      );
+      setIsLoading(false);
+      setOpenEdit(false);
+      setSelectedApplication(null);
+    }, 800);
   };
 
   const handleDelete = (id: string) => {
-    setApplications((prev) => prev.filter((app) => app.id !== id));
+    const confirmed = window.confirm("Are you sure?");
+    if (!confirmed) return;
+
+    setIsLoading(true);
+
+    setTimeout(() => {
+      setApplications((prev) => prev.filter((app) => app.id !== id));
+      setIsLoading(false);
+    }, 600);
   };
 
-  /* ---------- UI ---------- */
+  /* ---------------- UI ---------------- */
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Applications</h1>
-        <Button onClick={() => setOpenAdd(true)}>Add Application</Button>
+        <Button onClick={() => setOpenAdd(true)} disabled={isLoading}>
+          Add Application
+        </Button>
       </div>
+
+      {/* Filters & Sorting */}
       <div className="flex flex-col gap-4 sm:flex-row">
         <Input
-          placeholder="Search by company or role.."
+          placeholder="Search by company or role..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="sm:max-w-xs"
         />
+
         <Select
           value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as Status | "All")}
+          onValueChange={(v) => setStatusFilter(v as Status | "All")}
         >
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by Status" />
+          <SelectTrigger className="sm:max-w-xs">
+            <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="All">All</SelectItem>
@@ -181,8 +156,9 @@ const ApplicationsPage = () => {
             <SelectItem value="Rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
+
         <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-          <SelectTrigger className="sm:max-w-sm">
+          <SelectTrigger className="sm:max-w-xs">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
@@ -191,11 +167,12 @@ const ApplicationsPage = () => {
             <SelectItem value="status">Status</SelectItem>
           </SelectContent>
         </Select>
+
         <Select
           value={sortOrder}
           onValueChange={(v) => setSortOrder(v as SortOrder)}
         >
-          <SelectTrigger className="sm:max-w-sm">
+          <SelectTrigger className="sm:max-w-xs">
             <SelectValue placeholder="Order" />
           </SelectTrigger>
           <SelectContent>
@@ -218,17 +195,19 @@ const ApplicationsPage = () => {
         </TableHeader>
 
         <TableBody>
-          {sortedApplications.length === 0 ? (
+          {viewApplications.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={5}
-                className="text-center text-muted-foreground"
+                className="py-10 text-center text-muted-foreground"
               >
-                No matching applications
+                {search || statusFilter !== "All"
+                  ? "No applications match your filters"
+                  : "No applications yet. Add your first one."}
               </TableCell>
             </TableRow>
           ) : (
-            sortedApplications.map((app) => (
+            viewApplications.map((app) => (
               <TableRow key={app.id}>
                 <TableCell>{app.company}</TableCell>
                 <TableCell>{app.role}</TableCell>
@@ -241,11 +220,10 @@ const ApplicationsPage = () => {
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" disabled={isLoading}>
                         ⋮
                       </Button>
                     </DropdownMenuTrigger>
-
                     <DropdownMenuContent align="end" className="w-32">
                       <DropdownMenuItem
                         onClick={() => {
@@ -255,7 +233,6 @@ const ApplicationsPage = () => {
                       >
                         Edit
                       </DropdownMenuItem>
-
                       <DropdownMenuItem
                         className="text-red-600"
                         onClick={() => handleDelete(app.id)}
@@ -271,34 +248,25 @@ const ApplicationsPage = () => {
         </TableBody>
       </Table>
 
-      {/* Add Dialog */}
-      <Dialog open={openAdd} onOpenChange={setOpenAdd}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Application</DialogTitle>
-          </DialogHeader>
+      {/* ✅ Reusable Dialogs */}
+      <ApplicationDialog
+        open={openAdd}
+        title="Add Application"
+        onOpenChange={setOpenAdd}
+        onSubmit={handleAdd}
+      />
 
-          <ApplicationForm onSubmit={handleAdd} />
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Application</DialogTitle>
-          </DialogHeader>
-
-          <ApplicationForm
-            defaultValues={{
-              company: selectedApplication?.company,
-              role: selectedApplication?.role,
-              status: selectedApplication?.status,
-            }}
-            onSubmit={handleEdit}
-          />
-        </DialogContent>
-      </Dialog>
+      <ApplicationDialog
+        open={openEdit}
+        title="Edit Application"
+        defaultValues={{
+          company: selectedApplication?.company,
+          role: selectedApplication?.role,
+          status: selectedApplication?.status,
+        }}
+        onOpenChange={setOpenEdit}
+        onSubmit={handleEdit}
+      />
     </div>
   );
 };
