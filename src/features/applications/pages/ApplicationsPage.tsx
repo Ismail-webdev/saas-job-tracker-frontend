@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-
+import { useApplicationsQuery } from "../useApplicationsQuery";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,13 @@ import { useApplicationsView } from "../useApplicationsView";
 /* ---------------- Page ---------------- */
 
 const ApplicationsPage = () => {
+  const {
+    data: serverApplications,
+    isLoading: isFetching,
+    error,
+  } = useApplicationsQuery();
+  console.log("Applications from API:", serverApplications);
+
   const [applications, setApplications] = useState<Application[]>([
     {
       id: uuidv4(),
@@ -60,7 +67,7 @@ const ApplicationsPage = () => {
 
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
 
   const [selectedApplication, setSelectedApplication] =
     useState<Application | null>(null);
@@ -76,7 +83,7 @@ const ApplicationsPage = () => {
   /* ---------------- Handlers ---------------- */
 
   const handleAdd = (data: ApplicationFormValues) => {
-    setIsLoading(true);
+    setIsMutating(true);
 
     setTimeout(() => {
       setApplications((prev) => [
@@ -87,7 +94,7 @@ const ApplicationsPage = () => {
           ...data,
         },
       ]);
-      setIsLoading(false);
+      setIsMutating(false);
       setOpenAdd(false);
     }, 800);
   };
@@ -95,7 +102,7 @@ const ApplicationsPage = () => {
   const handleEdit = (data: ApplicationFormValues) => {
     if (!selectedApplication) return;
 
-    setIsLoading(true);
+    setIsMutating(true);
 
     setTimeout(() => {
       setApplications((prev) =>
@@ -103,7 +110,7 @@ const ApplicationsPage = () => {
           app.id === selectedApplication.id ? { ...app, ...data } : app
         )
       );
-      setIsLoading(false);
+      setIsMutating(false);
       setOpenEdit(false);
       setSelectedApplication(null);
     }, 800);
@@ -113,11 +120,11 @@ const ApplicationsPage = () => {
     const confirmed = window.confirm("Are you sure?");
     if (!confirmed) return;
 
-    setIsLoading(true);
+    setIsMutating(true);
 
     setTimeout(() => {
       setApplications((prev) => prev.filter((app) => app.id !== id));
-      setIsLoading(false);
+      setIsMutating(false);
     }, 600);
   };
 
@@ -127,7 +134,7 @@ const ApplicationsPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Applications</h1>
-        <Button onClick={() => setOpenAdd(true)} disabled={isLoading}>
+        <Button onClick={() => setOpenAdd(true)} disabled={isMutating}>
           Add Application
         </Button>
       </div>
@@ -220,7 +227,7 @@ const ApplicationsPage = () => {
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" disabled={isLoading}>
+                      <Button variant="ghost" size="sm" disabled={isMutating}>
                         ⋮
                       </Button>
                     </DropdownMenuTrigger>
@@ -248,7 +255,7 @@ const ApplicationsPage = () => {
         </TableBody>
       </Table>
 
-      {/* ✅ Reusable Dialogs */}
+      {/*  Dialogs */}
       <ApplicationDialog
         open={openAdd}
         title="Add Application"
